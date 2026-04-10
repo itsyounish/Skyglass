@@ -154,6 +154,17 @@ export class Camera2D {
   private _zoomAnchorVH = 0
 
   // -----------------------------------------------------------------------
+  /** Snap instantly to a position — no animation. */
+  snapTo(x: number, y: number, zoom: number): void {
+    this.x = x
+    this.y = y
+    this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, zoom))
+    this.zoomTarget = this.zoom
+    this.animating = false
+    this.zoomInterpolating = false
+    this.dirty = true
+  }
+
   // Animated fly-to
   // -----------------------------------------------------------------------
 
@@ -171,12 +182,18 @@ export class Camera2D {
     this.dirty = true
   }
 
+  /**
+   * @param hudOffsetPx — screen-space px taken by the HUD on the left.
+   *   The camera center is shifted so the graph appears centered in the
+   *   remaining viewport area (right of HUD).
+   */
   fitAll(
     points: [number, number][],
     viewWidth: number,
     viewHeight: number,
     padding = 0.1,
     maxZoom = 2.0,
+    hudOffsetPx = 0,
   ): void {
     if (points.length === 0) return
 
@@ -193,7 +210,10 @@ export class Camera2D {
     const centerY = (minY + maxY) / 2
     const spanX = (maxX - minX) + 250
     const spanY = (maxY - minY) + 100
-    const availW = viewWidth * (1 - padding * 2)
+
+    // Use the usable area (right of HUD) for zoom calculation
+    const usableW = viewWidth - hudOffsetPx
+    const availW = usableW * (1 - padding * 2)
     const availH = viewHeight * (1 - padding * 2)
 
     let fitZoom: number
@@ -203,7 +223,15 @@ export class Camera2D {
     else fitZoom = Math.min(availW / spanX, availH / spanY)
 
     fitZoom = Math.min(maxZoom, Math.max(this.minZoom, fitZoom))
-    this.flyTo(centerX, centerY, fitZoom)
+
+    // Shift camera so graph is centered in the usable viewport (right of HUD).
+    // applyTransform: screenX = viewWidth/2 + (worldX - camera.x) * zoom
+    // We want worldX=centerX to appear at screenX = hudOffsetPx + usableW/2
+    // → camera.x = centerX - (hudOffsetPx + usableW/2 - viewWidth/2) / fitZoom
+    //            = centerX - (hudOffsetPx/2) / fitZoom
+    const camX = centerX - (hudOffsetPx / 2) / fitZoom
+
+    this.flyTo(camX, centerY, fitZoom)
   }
 
   // -----------------------------------------------------------------------

@@ -221,10 +221,10 @@ export class Renderer2D {
     this._cachedH = 0
   }
 
-  fitAll(padding = 0.12, maxZoom = 1.0) {
+  fitAll(padding = 0.12, maxZoom = 1.0, hudOffsetPx = 0) {
     if (this.nodes.length === 0) return
     const pts: [number, number][] = this.nodes.map(n => [n.x, n.y])
-    this.camera.fitAll(pts, this.width, this.height, padding, maxZoom)
+    this.camera.fitAll(pts, this.width, this.height, padding, maxZoom, hudOffsetPx)
   }
 
   // ---------------------------------------------------------------------------
