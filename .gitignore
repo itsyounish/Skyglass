@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.local
+.env
+.env.*
+.DS_Store
+*.tsbuildinfo
+
+# Internal strategy docs — not for public
+_bmad-output/
+CLAUDE.md
+npx infra-3d --provider aws.md
+
+# Raw screenshots (clean copies live in docs/assets/)
+EC1C8516-E625-4D48-B92E-6D0F0ECFA6CF.jpeg
+5348CCAA-95AC-4F5C-B0BC-5377C7FCCF0C.jpeg
+492F94A0-5FEA-4A95-8BF6-C53362ACBB36.jpeg

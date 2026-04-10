@@ -1,0 +1,24 @@
+# Test files
+src/**/__tests__/
+src/**/*.test.ts
+src/**/*.spec.ts
+vitest.config.ts
+
+# CI / tooling
+.github/
+.editorconfig
+.nvmrc
+
+# Internal strategy / architecture docs (not for consumers)
+_bmad-output/
+PRODUCT_STRATEGY.md
+ARCHITECTURE_DATA_V2.md
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+
+# Local dev artifacts
+public/graph.json
+*.log
+.DS_Store

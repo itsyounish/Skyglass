@@ -1,0 +1,154 @@
+name: Infrastructure Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  screenshot:
+    name: Capture Infrastructure Preview
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Start preview server
+        run: npx vite preview --port 4173 &
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:4173 > /dev/null && echo "Server ready" && break
+            echo "Waiting for server... attempt $i"
+            sleep 2
+          done
+
+      - name: Take scene screenshot
+        run: |
+          node --input-type=module << 'EOF'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-gpu',
+              '--enable-webgl',
+              '--use-gl=swiftshader',
+            ]
+          });
+
+          const context = await browser.newContext({
+            viewport: { width: 1920, height: 1080 },
+          });
+
+          const page = await context.newPage();
+
+          // Capture and suppress console noise in CI
+          page.on('console', msg => {
+            if (msg.type() === 'error') {
+              console.error('[browser]', msg.text());
+            }
+          });
+
+          await page.goto('http://localhost:4173', { waitUntil: 'networkidle' });
+
+          // Wait for the force layout to settle (~5s) plus a safety margin
+          await page.waitForTimeout(7000);
+
+          await page.screenshot({ path: 'screenshot.png', fullPage: false });
+          console.log('Screenshot captured: screenshot.png');
+
+          await browser.close();
+          EOF
+
+      - name: Upload screenshot artifact
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: screenshot.png
+          retention-days: 14
+
+      - name: Post PR comment with preview link
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.runId;
+            const repo = context.repo;
+            const prNumber = context.issue.number;
+            const sha = context.payload.pull_request.head.sha.substring(0, 7);
+
+            const artifactUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
+
+            const body = [
+              '## Infrastructure Preview',
+              '',
+              `Commit: \`${sha}\``,
+              '',
+              '> The graph was captured after the force-directed layout settled (~7s).',
+              '> Download the artifact below to see the full render.',
+              '',
+              `**[View artifact (screenshot.png)](${artifactUrl})**`,
+              '',
+              '| Info | Value |',
+              '|------|-------|',
+              `| Run | [#${runId}](${artifactUrl}) |`,
+              `| Branch | \`${context.payload.pull_request.head.ref}\` |`,
+              `| Commit | \`${sha}\` |`,
+              `| Retention | 14 days |`,
+              '',
+              '<details>',
+              '<summary>How to view</summary>',
+              '',
+              '1. Click the artifact link above',
+              '2. Scroll to **Artifacts** at the bottom of the run summary',
+              `3. Download \`infra-preview-${prNumber}-${runId}\``,
+              '',
+              '</details>',
+            ].join('\n');
+
+            // Delete any previous skyglass-preview comments on this PR to avoid clutter
+            const comments = await github.rest.issues.listComments({
+              ...repo,
+              issue_number: prNumber,
+            });
+
+            for (const comment of comments.data) {
+              if (
+                comment.user.login === 'github-actions[bot]' &&
+                comment.body.includes('## Infrastructure Preview')
+              ) {
+                await github.rest.issues.deleteComment({
+                  ...repo,
+                  comment_id: comment.id,
+                });
+              }
+            }
+
+            await github.rest.issues.createComment({
+              ...repo,
+              issue_number: prNumber,
+              body,
+            });

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/itsyounish/skyglass/discussions/categories/q-a
+    about: Ask questions and get help from the community
+  - name: Feature ideas
+    url: https://github.com/itsyounish/skyglass/discussions/categories/ideas
+    about: Suggest and vote on new features
