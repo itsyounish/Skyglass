@@ -70,25 +70,47 @@ export function Canvas2DView({
     const r = rendererRef.current
     if (!r || layoutNodes.length === 0) return
     r.setGraph(graph, layoutNodes)
-    if (!hasFitted.current) {
-      let cx = 0, cy = 0
-      for (const n of layoutNodes) { cx += n.x; cy += n.y }
-      cx /= layoutNodes.length; cy /= layoutNodes.length
-      r.camera.x = cx
-      r.camera.y = cy
-      r.camera.zoom = 0.6
-    }
   }, [graph])
 
-  // Update positions as force layout converges
+  // Update positions as force layout converges — keep camera centered on nodes
   useEffect(() => {
     const r = rendererRef.current
     if (!r || layoutNodes.length === 0) return
     r.updatePositions(layoutNodes)
 
-    if (settled && !hasFitted.current) {
-      hasFitted.current = true
-      setTimeout(() => r.fitAll(0.12, 0.9), 150)
+    if (!hasFitted.current) {
+      // Compute centroid + bounding box of all nodes
+      let cx = 0, cy = 0
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      for (const n of layoutNodes) {
+        cx += n.x; cy += n.y
+        if (n.x < minX) minX = n.x
+        if (n.x > maxX) maxX = n.x
+        if (n.y < minY) minY = n.y
+        if (n.y > maxY) maxY = n.y
+      }
+      cx /= layoutNodes.length; cy /= layoutNodes.length
+
+      // Offset centroid to compensate for the HUD panel on the left (~100px in world-space)
+      const hudOffset = 80 / Math.max(r.camera.zoom, 0.3)
+      r.camera.x = cx + hudOffset
+      r.camera.y = cy
+
+      if (!settled) {
+        // While converging, compute a zoom that fits the current bounding box
+        const spanX = (maxX - minX) + 250
+        const spanY = (maxY - minY) + 100
+        const fitZoom = Math.min(r.width * 0.76 / spanX, r.height * 0.76 / spanY)
+        r.camera.zoom = Math.max(0.4, fitZoom)
+      } else {
+        // Layout is done — fly to the best-fit view
+        hasFitted.current = true
+        const spanX = (maxX - minX) + 250
+        const spanY = (maxY - minY) + 100
+        const fitZoom = Math.min(r.width * 0.76 / spanX, r.height * 0.76 / spanY)
+        const finalZoom = Math.max(0.4, Math.min(1.2, fitZoom))
+        r.camera.flyTo(cx + hudOffset, cy, finalZoom)
+      }
     }
   }, [layoutNodes, settled])
 
