@@ -2,7 +2,7 @@
   <h1>skyglass</h1>
   <p><em>A looking glass for your cloud.</em></p>
 
-  <img src="docs/assets/hero.png" alt="skyglass — interactive multi-cloud infrastructure graph" width="820">
+  <img src="docs/assets/hero-dark.jpeg" alt="skyglass — interactive multi-cloud infrastructure graph showing AWS, Azure and GCP clusters" width="820">
 
   <br/><br/>
 
@@ -114,11 +114,11 @@ gcloud auth application-default login
 | **Export** | Screenshot & data | Export PNG screenshots, JSON, DOT (Graphviz), or CSV |
 | **History** | Snapshot & diff | Save scan snapshots, compare changes over time |
 
-### Blast Radius
+### Semantic Zoom
 
-Click any resource to visualize cascading failure propagation across your entire infrastructure — including cross-cloud dependencies.
+Zoom in to explore individual services with official icons, labels, and connection details.
 
-<img src="docs/assets/blast-radius.png" alt="Blast radius visualization showing failure cascade across AWS, Azure and GCP" width="820">
+<img src="docs/assets/zoom-detail.jpeg" alt="Zoomed-in view showing Azure services with official icons and labels" width="820">
 
 ---
 
