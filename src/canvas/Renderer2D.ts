@@ -492,6 +492,7 @@ export class Renderer2D {
       const searchFaded = this.searchMatchIds !== null && !this.searchMatchIds.has(node.id)
       const isFaded = isBlastFaded || normalFaded || searchFaded
       const isConnected = this.connectedIds !== null && this.connectedIds.has(node.id)
+      const isBlastAffected = this.blastMode && this.blastAffectedNodes.has(node.id)
 
       // Entrance: scale from 0 with elastic overshoot
       if (nodeEntrance < 1) {
@@ -500,10 +501,10 @@ export class Renderer2D {
         ctx.translate(node.x, node.y)
         ctx.scale(scale, scale)
         ctx.translate(-node.x, -node.y)
-        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time)
+        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected)
         ctx.restore()
       } else {
-        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time)
+        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected)
       }
     }
 
@@ -568,12 +569,14 @@ export class Renderer2D {
       const normalFaded = this.connectedIds !== null && !this.connectedIds.has(node.id)
       const searchFaded = this.searchMatchIds !== null && !this.searchMatchIds.has(node.id)
       const isFaded = isBlastFaded || normalFaded || searchFaded
+      const isBlastAffected = this.blastMode && this.blastAffectedNodes.has(node.id)
 
       drawNodeCardDetail(
         ctx, node,
         this.selectedNodeId === node.id,
         this.hoveredNodeId === node.id,
         isFaded, 1, time,
+        isBlastAffected,
       )
     }
   }

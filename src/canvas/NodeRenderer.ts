@@ -50,16 +50,17 @@ export function drawNodeOrb(
   isConnected: boolean,
   opacity: number,
   time: number,
+  isBlastAffected: boolean = false,
 ) {
   const colors = PROVIDER_COLORS[node.provider]
 
   // Size: importance drives radius. Bigger = more important.
   const baseSize = 6 + node.importance * 1.8
-  const sizeMult = isSelected ? 1.6 : (isHovered ? 1.4 : (isConnected ? 1.2 : (isFaded ? 0.7 : 1)))
+  const sizeMult = isSelected ? 1.6 : (isHovered ? 1.4 : (isBlastAffected ? 1.25 : (isConnected ? 1.2 : (isFaded ? 0.85 : 1))))
   const r = baseSize * sizeMult
 
   // Color: full or dimmed toward background
-  const nodeColor = isFaded ? dimColor(colors.primary, 0.2) : colors.primary
+  const nodeColor = isFaded ? dimColor(colors.primary, 0.4) : colors.primary
 
   ctx.save()
   ctx.globalAlpha = opacity
@@ -124,6 +125,26 @@ export function drawNodeOrb(
     ctx.globalAlpha = opacity * 0.6
     ctx.beginPath()
     ctx.arc(node.x, node.y, r + 6, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = opacity
+  }
+
+  // ── Blast radius: red pulsing halo on affected nodes ──────────────
+  if (isBlastAffected && !isFaded) {
+    const pulse = (Math.sin(time * 3.5) + 1) * 0.5
+    // Inner red ring — always on, bold
+    ctx.strokeStyle = '#ef4444'
+    ctx.lineWidth = 2
+    ctx.globalAlpha = opacity * 0.9
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2)
+    ctx.stroke()
+    // Outer pulsing halo
+    ctx.strokeStyle = '#ef4444'
+    ctx.lineWidth = 1.5
+    ctx.globalAlpha = opacity * (0.15 + pulse * 0.35)
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, r + 7 + pulse * 4, 0, Math.PI * 2)
     ctx.stroke()
     ctx.globalAlpha = opacity
   }
@@ -278,8 +299,9 @@ export function drawNodeCardDetail(
   isFaded: boolean,
   opacity: number,
   time: number,
+  isBlastAffected: boolean = false,
 ) {
-  drawNodeOrb(ctx, node, isSelected, isHovered, isFaded, true, opacity, time)
+  drawNodeOrb(ctx, node, isSelected, isHovered, isFaded, true, opacity, time, isBlastAffected)
   if (isFaded) return
 
   const orbR = 6 + node.importance * 1.8

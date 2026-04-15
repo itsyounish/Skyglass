@@ -108,11 +108,11 @@ export function drawEdge(
   let lineAlpha: number
   let lineWidth: number
   if (isFaded) {
-    lineAlpha = 0.0
-    lineWidth = 0.2
+    lineAlpha = 0.08
+    lineWidth = 0.3
   } else if (isBlastPath) {
-    lineAlpha = 0.8
-    lineWidth = 2
+    lineAlpha = 0.95
+    lineWidth = 2.5
   } else if (isHighlighted) {
     lineAlpha = 0.7
     lineWidth = isCrossCloud ? 1.5 : 1
