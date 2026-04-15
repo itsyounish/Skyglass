@@ -121,7 +121,7 @@
     "@google-cloud/redis": "^4.0.0",
     "@google-cloud/run": "^1.0.0",
     "@google-cloud/scheduler": "^4.0.0",
-    "@google-cloud/spanner": "^7.0.0",
+    "@google-cloud/spanner": "^8.6.0",
     "@google-cloud/sql": "^1.0.0",
     "@google-cloud/storage": "^7.0.0",
     "@google-cloud/tasks": "^5.0.0"
