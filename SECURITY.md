@@ -30,7 +30,7 @@ Security fixes are applied to the latest release only.
 
 Please **do not open a public GitHub issue** for security vulnerabilities.
 
-Report via [GitHub Security Advisories](https://github.com/itsyounish/skyglass/security/advisories/new).
+Report via [GitHub Security Advisories](https://github.com/itsyounish/Skyglass/security/advisories/new).
 
 Include:
 - A description of the vulnerability

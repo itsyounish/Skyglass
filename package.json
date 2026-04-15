@@ -19,13 +19,13 @@
     "architecture-diagram"
   ],
   "author": "itsyounish",
-  "homepage": "https://github.com/itsyounish/skyglass#readme",
+  "homepage": "https://github.com/itsyounish/Skyglass#readme",
   "bugs": {
-    "url": "https://github.com/itsyounish/skyglass/issues"
+    "url": "https://github.com/itsyounish/Skyglass/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/itsyounish/skyglass.git"
+    "url": "git+https://github.com/itsyounish/Skyglass.git"
   },
   "bin": {
     "skyglass-cli": "./bin/cli.js"

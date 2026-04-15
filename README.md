@@ -7,7 +7,7 @@
   <br/><br/>
 
   <a href="https://www.npmjs.com/package/skyglass-cli"><img src="https://img.shields.io/npm/v/skyglass-cli?style=flat-square&color=cb3837&label=skyglass-cli" alt="npm version"></a>
-  <a href="https://github.com/itsyounish/skyglass/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/itsyounish/skyglass/ci.yml?style=flat-square&label=ci" alt="CI status"></a>
+  <a href="https://github.com/itsyounish/Skyglass/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/itsyounish/Skyglass/ci.yml?style=flat-square&label=ci" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License: MIT"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square" alt="Node >= 20"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square" alt="TypeScript strict"></a>
@@ -195,8 +195,8 @@ All scans are **read-only**. Only `Describe*`, `List*`, and `Get*` API calls are
 ## Development
 
 ```bash
-git clone https://github.com/itsyounish/skyglass.git
-cd skyglass
+git clone https://github.com/itsyounish/Skyglass.git
+cd Skyglass
 npm install
 npm run dev    # Dev server with demo data at localhost:5173
 ```
@@ -215,6 +215,6 @@ MIT &mdash; See [LICENSE](LICENSE) for details.
 
 **Try it now:** <code>npx skyglass-cli --demo</code> &mdash; 10 seconds, no credentials, scan results stay on your machine.
 
-If it's useful, [give it a star](https://github.com/itsyounish/skyglass) so others can find it.
+If it's useful, [give it a star](https://github.com/itsyounish/Skyglass) so others can find it.
 
 </div>
