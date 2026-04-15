@@ -2,18 +2,19 @@
   <h1>skyglass</h1>
   <p><em>A looking glass for your cloud.</em></p>
 
-  <img src="docs/assets/hero-dark.jpeg" alt="skyglass — interactive multi-cloud infrastructure graph showing AWS, Azure and GCP clusters" width="820">
+  <img src="docs/assets/demo-readme.gif" alt="skyglass — interactive multi-cloud infrastructure graph showing AWS, Azure and GCP clusters" width="820">
 
   <br/><br/>
 
-  <a href="https://www.npmjs.com/package/skyglass"><img src="https://img.shields.io/npm/v/skyglass?style=flat-square&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/skyglass-cli"><img src="https://img.shields.io/npm/v/skyglass-cli?style=flat-square&color=cb3837&label=skyglass-cli" alt="npm version"></a>
+  <a href="https://github.com/itsyounish/skyglass/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/itsyounish/skyglass/ci.yml?style=flat-square&label=ci" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License: MIT"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square" alt="Node >= 20"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square" alt="TypeScript strict"></a>
 
   <br/><br/>
 
-  <strong><code>npx skyglass --demo</code></strong> &mdash; try it now, no credentials needed.
+  <strong><code>npx skyglass-cli --demo</code></strong> &mdash; try it now, no credentials needed.
 
 </div>
 
@@ -23,7 +24,7 @@
 
 Your cloud has 200+ resources across 3 providers. The AWS Console shows you one service at a time. Terraform state is a JSON blob. CloudFormation outputs a wall of text.
 
-Skyglass shows you **everything at once** — every resource, every connection, every dependency — in an interactive graph you can actually understand. One command. No config. No data leaves your machine.
+Skyglass shows you **everything at once** — every resource, every connection, every dependency — in an interactive graph you can actually understand. One command. No config. No SaaS. Scan results stay on your machine.
 
 ---
 
@@ -31,14 +32,16 @@ Skyglass shows you **everything at once** — every resource, every connection, 
 
 ```bash
 # Try instantly with sample data (no credentials needed)
-npx skyglass --demo
+npx skyglass-cli --demo
 
 # Scan your real cloud infrastructure
-npx skyglass all
+npx skyglass-cli all
 
 # Import from a Terraform state file
-npx skyglass --from terraform.tfstate
+npx skyglass-cli --from terraform.tfstate
 ```
+
+> **Note on icons.** Official AWS / Azure / GCP service icons are fetched on first load from the [tf2d2/icons](https://github.com/tf2d2/icons) GitHub CDN. Your cloud credentials, resources and scan data **never** leave your machine &mdash; only the icon SVGs are downloaded. Services without an official icon use a local SVG fallback.
 
 ---
 
@@ -65,7 +68,7 @@ Skyglass runs **locally on your machine**. It uses the same credentials as your 
 ```
 Your terminal                           Your browser
 ────────────                           ────────────
-npx skyglass all
+npx skyglass-cli all
      │
      ├─ Uses your local credentials:
      │   • AWS  → ~/.aws/credentials or env vars
@@ -79,8 +82,10 @@ npx skyglass all
      │
      ├─ Starts a local server ──────────► Opens interactive viewer
      │                                    on localhost
-     └─ No data sent anywhere.
-         Everything stays on your machine.
+     └─ Scan results stay on your machine.
+         (Official service icons are fetched
+          from the public tf2d2/icons GitHub
+          CDN on first load.)
 ```
 
 **Prerequisites** &mdash; just be authenticated in your terminal:
@@ -113,6 +118,12 @@ gcloud auth application-default login
 | **Cost** | Cost analysis | See cost per resource, per provider, per category |
 | **Export** | Screenshot & data | Export PNG screenshots, JSON, DOT (Graphviz), or CSV |
 | **History** | Snapshot & diff | Save scan snapshots, compare changes over time |
+
+### Blast Radius
+
+Press `B` on any resource to see what would break if it failed. Skyglass walks the dependency graph and animates the cascade in red.
+
+<img src="docs/assets/blast-radius.gif" alt="Blast radius mode — cascading failure animation across dependent resources" width="820">
 
 ### Semantic Zoom
 
@@ -177,7 +188,7 @@ All scans are **read-only**. Only `Describe*`, `List*`, and `Get*` API calls are
 | **Icons** | Official AWS/Azure/GCP architecture icons via [tf2d2/icons](https://github.com/tf2d2/icons) |
 | **Framework** | React + TypeScript (strict) |
 | **Scanners** | AWS SDK v3, Azure SDK, Google Cloud SDK (optional deps) |
-| **Build** | Vite &mdash; 280 KB bundle (82 KB gzip) |
+| **Build** | Vite &mdash; 284 KB bundle (83 KB gzip) |
 
 ---
 
@@ -202,7 +213,7 @@ MIT &mdash; See [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**Try it now:** <code>npx skyglass --demo</code> &mdash; 10 seconds, no credentials, no data leaves your machine.
+**Try it now:** <code>npx skyglass-cli --demo</code> &mdash; 10 seconds, no credentials, scan results stay on your machine.
 
 If it's useful, [give it a star](https://github.com/itsyounish/skyglass) so others can find it.
 

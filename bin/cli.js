@@ -52,10 +52,10 @@ for (let i = 0; i < args.length; i++) {
   skyglass — A looking glass for your cloud
 
   Usage:
-    npx skyglass <provider>                      Scan and visualize your infrastructure
-    npx skyglass --from <file>                   Import from Terraform state file
-    npx skyglass --demo                          Launch with sample data (no credentials)
-    npx skyglass --generate-policy <provider>    Output minimal IAM policy JSON
+    npx skyglass-cli <provider>                      Scan and visualize your infrastructure
+    npx skyglass-cli --from <file>                   Import from Terraform state file
+    npx skyglass-cli --demo                          Launch with sample data (no credentials)
+    npx skyglass-cli --generate-policy <provider>    Output minimal IAM policy JSON
 
   Providers:
     aws                                          Scan AWS infrastructure
@@ -76,32 +76,32 @@ for (let i = 0; i < args.length; i++) {
     --help, -h                                   Show this help
 
   Snapshot Management:
-    npx skyglass history                         List all saved snapshots
-    npx skyglass diff                            Diff latest vs previous snapshot
-    npx skyglass diff --from <id> --to <id>      Diff two specific snapshots
-    npx skyglass delete-snapshot <id>            Delete a snapshot
+    npx skyglass-cli history                         List all saved snapshots
+    npx skyglass-cli diff                            Diff latest vs previous snapshot
+    npx skyglass-cli diff --from <id> --to <id>      Diff two specific snapshots
+    npx skyglass-cli delete-snapshot <id>            Delete a snapshot
 
   Export:
-    npx skyglass export --format json -o out.json   Export as JSON
-    npx skyglass export --format dot -o out.dot     Export as Graphviz DOT
-    npx skyglass export --format csv -o out.csv     Export as CSV
-    npx skyglass export --snapshot <id> -f json     Export a specific snapshot
+    npx skyglass-cli export --format json -o out.json   Export as JSON
+    npx skyglass-cli export --format dot -o out.dot     Export as Graphviz DOT
+    npx skyglass-cli export --format csv -o out.csv     Export as CSV
+    npx skyglass-cli export --snapshot <id> -f json     Export a specific snapshot
 
   Snapshot references:
     Full ID (e.g. 20260329-143000-a1b2), partial prefix, or #N index
     (#1 = most recent, #2 = second most recent, etc.)
 
   Examples:
-    npx skyglass all                             Scan all configured providers
-    npx skyglass all -r eu-west-1                Scan with specific region
-    npx skyglass aws --profiles prod,staging     Multi-account AWS scan
-    npx skyglass --from terraform.tfstate        Import Terraform state
-    npx skyglass --from state.json --redact      Import and strip sensitive data
-    npx skyglass --demo                          Interactive demo with sample data
-    npx skyglass --generate-policy aws           Output AWS IAM policy JSON
-    npx skyglass history                         Show scan history
-    npx skyglass diff                            What changed since last scan?
-    npx skyglass export -f dot -o infra.dot      Export for Graphviz
+    npx skyglass-cli all                             Scan all configured providers
+    npx skyglass-cli all -r eu-west-1                Scan with specific region
+    npx skyglass-cli aws --profiles prod,staging     Multi-account AWS scan
+    npx skyglass-cli --from terraform.tfstate        Import Terraform state
+    npx skyglass-cli --from state.json --redact      Import and strip sensitive data
+    npx skyglass-cli --demo                          Interactive demo with sample data
+    npx skyglass-cli --generate-policy aws           Output AWS IAM policy JSON
+    npx skyglass-cli history                         Show scan history
+    npx skyglass-cli diff                            What changed since last scan?
+    npx skyglass-cli export -f dot -o infra.dot      Export for Graphviz
 
   Credentials:
     Uses your existing CLI credentials. No agents, no SaaS, no signup.
@@ -113,7 +113,7 @@ for (let i = 0; i < args.length; i++) {
 `)
     process.exit(0)
   } else if (!args[i].startsWith('-') && !flags.provider) {
-    // Positional argument = provider shorthand (e.g. "npx skyglass aws")
+    // Positional argument = provider shorthand (e.g. "npx skyglass-cli aws")
     flags.provider = args[i]
   }
 }
@@ -167,7 +167,7 @@ function handleHistory() {
   if (snapshots.length === 0) {
     console.log('')
     console.log('  No snapshots found.')
-    console.log('  Run a scan first: npx skyglass aws')
+    console.log('  Run a scan first: npx skyglass-cli aws')
     console.log('')
     process.exit(0)
   }
@@ -210,7 +210,7 @@ function handleDiff(subFlags) {
     if (snapshots.length < 2) {
       console.log('')
       console.log('  Need at least 2 snapshots to diff.')
-      console.log('  Run scans first: npx skyglass aws')
+      console.log('  Run scans first: npx skyglass-cli aws')
       console.log('')
       process.exit(1)
     }
@@ -219,8 +219,8 @@ function handleDiff(subFlags) {
   } else if (!fromId || !toId) {
     console.log('')
     console.log('  Usage:')
-    console.log('    npx skyglass diff                          Compare latest vs previous')
-    console.log('    npx skyglass diff --from <id> --to <id>    Compare two specific snapshots')
+    console.log('    npx skyglass-cli diff                          Compare latest vs previous')
+    console.log('    npx skyglass-cli diff --from <id> --to <id>    Compare two specific snapshots')
     console.log('')
     process.exit(1)
   }
@@ -371,7 +371,7 @@ function handleDeleteSnapshot(subFlags) {
 
   const id = subFlags.positional
   if (!id) {
-    console.error('  Usage: npx skyglass delete-snapshot <id>')
+    console.error('  Usage: npx skyglass-cli delete-snapshot <id>')
     process.exit(1)
   }
 
@@ -478,14 +478,14 @@ if (!flags.provider && !flags.demo && !flags.from) {
   console.log('  skyglass — A looking glass for your cloud')
   console.log('')
   console.log('  Usage:')
-  console.log('    npx skyglass all                Scan all your cloud providers')
-  console.log('    npx skyglass --from state.json  Import Terraform state')
-  console.log('    npx skyglass --demo             Try with sample data')
-  console.log('    npx skyglass history             List saved snapshots')
-  console.log('    npx skyglass diff                Diff latest vs previous')
-  console.log('    npx skyglass export -f json -o out.json')
+  console.log('    npx skyglass-cli all                Scan all your cloud providers')
+  console.log('    npx skyglass-cli --from state.json  Import Terraform state')
+  console.log('    npx skyglass-cli --demo             Try with sample data')
+  console.log('    npx skyglass-cli history             List saved snapshots')
+  console.log('    npx skyglass-cli diff                Diff latest vs previous')
+  console.log('    npx skyglass-cli export -f json -o out.json')
   console.log('')
-  console.log('  Run npx skyglass --help for all options.')
+  console.log('  Run npx skyglass-cli --help for all options.')
   console.log('')
   process.exit(0)
 }

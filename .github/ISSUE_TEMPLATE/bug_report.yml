@@ -23,7 +23,7 @@ body:
       label: Steps to reproduce
       description: Steps to reproduce the behavior.
       placeholder: |
-        1. Run `npx skyglass --provider aws`
+        1. Run `npx skyglass-cli --provider aws`
         2. Wait for the graph to render
         3. Click on a node
         4. See error in console
@@ -54,9 +54,9 @@ body:
       label: Node.js version
       description: Which Node.js version are you running?
       options:
-        - "18.x"
         - "20.x"
         - "22.x"
+        - "24.x"
         - "Other (specify in description)"
     validations:
       required: true
@@ -79,7 +79,7 @@ body:
     id: version
     attributes:
       label: skyglass version
-      description: "Run `npx skyglass --version` to find out."
+      description: "Check the banner printed on startup, or your installed `package.json`."
       placeholder: "e.g. 0.1.0"
     validations:
       required: false

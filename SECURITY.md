@@ -9,8 +9,9 @@ Credentials are never stored, logged, or transmitted. They are used only to make
 ## Data Privacy
 
 - All scanned infrastructure data stays local. It is held in memory for the duration of the session and never written to disk unless you explicitly export it.
-- There is no telemetry, no analytics, and no external API calls of any kind beyond your own cloud provider endpoints.
-- Running `npx skyglass` in demo mode makes zero network requests.
+- There is no telemetry and no analytics. Skyglass makes no network calls beyond two categories:
+  - **Your own cloud provider endpoints**, for read-only scans (when not in demo mode).
+  - **The public `raw.githubusercontent.com/tf2d2/icons` CDN**, to fetch official AWS / Azure / GCP service-icon SVGs on first load. These requests contain no cloud data &mdash; only the icon filename is in the URL. If your environment blocks GitHub, icons fall back to local SVGs and scanning still works.
 
 ## Recommended IAM Scope
 

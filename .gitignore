@@ -10,6 +10,7 @@ dist/
 _bmad-output/
 CLAUDE.md
 npx infra-3d --provider aws.md
+docs/launch-plan.md
 
 # Raw screenshots (clean copies live in docs/assets/)
 EC1C8516-E625-4D48-B92E-6D0F0ECFA6CF.jpeg

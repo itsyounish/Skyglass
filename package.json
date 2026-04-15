@@ -1,5 +1,5 @@
 {
-  "name": "skyglass",
+  "name": "skyglass-cli",
   "version": "0.1.0",
   "description": "A looking glass for your cloud. Interactive 2D visualization of AWS, Azure, and GCP infrastructure.",
   "type": "module",
@@ -25,10 +25,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/itsyounish/skyglass"
+    "url": "git+https://github.com/itsyounish/skyglass.git"
   },
   "bin": {
-    "skyglass": "./bin/cli.js"
+    "skyglass-cli": "./bin/cli.js"
   },
   "files": [
     "bin/",
@@ -51,6 +51,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "node bin/cli.js",
+    "record-demo": "node scripts/record-demo.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-04-10
+## [0.1.0] - 2026-04-15
 
 ### Added
 - Multi-cloud infrastructure scanning (AWS, Azure, GCP)
@@ -24,4 +24,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terraform state file import (v4 format, 100+ resource types)
 - Snapshot persistence and diff engine
 - Export to JSON, DOT (Graphviz), CSV, and PNG screenshot
-- Zero-config demo mode with realistic mock data (68 nodes, 60+ edges across 3 providers)
+- Zero-config demo mode with realistic mock data (141 nodes, 162 edges across 3 providers)
