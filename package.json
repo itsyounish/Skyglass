@@ -116,7 +116,7 @@
     "@google-cloud/container": "^5.0.0",
     "@google-cloud/dns": "^4.0.0",
     "@google-cloud/firestore": "^7.0.0",
-    "@google-cloud/functions": "^3.0.0",
+    "@google-cloud/functions": "^4.2.1",
     "@google-cloud/pubsub": "^4.0.0",
     "@google-cloud/redis": "^4.0.0",
     "@google-cloud/run": "^1.0.0",
