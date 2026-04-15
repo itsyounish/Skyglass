@@ -220,7 +220,8 @@ export async function scanGCP(projectId: string): Promise<InfraGraph> {
       }
 
       const container = template?.containers?.[0]
-      const envVarNames = (container?.env ?? []).map((e: any) => `${e.name}=${e.value ?? '*secret*'}`).join(', ')
+      // Names only — never capture env var VALUES (they may contain secrets).
+      const envVarNames = (container?.env ?? []).map((e: any) => e.name ?? '').filter(Boolean).join(', ')
 
       nodes.push({
         id: nodeId,
@@ -242,6 +243,7 @@ export async function scanGCP(projectId: string): Promise<InfraGraph> {
           launchStage: service.launchStage ?? '',
           lastModifier: service.lastModifier ?? '',
           createTime: service.createTime?.toISOString?.() ?? '',
+          envVarNames,
         },
         status: gcpStatusHealth(service.reconciling ? 'PENDING' : 'READY'),
         importance: 6,

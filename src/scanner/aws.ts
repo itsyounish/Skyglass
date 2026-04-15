@@ -97,7 +97,9 @@ export async function scanAWS(region: string): Promise<InfraGraph> {
   const sgToInstances: Record<string, string[]> = {}
   const subnetIdToNodeId: Record<string, string> = {}
   const vpcIdToNodeId: Record<string, string> = {}
-  const lambdaFunctions: Array<{ nodeId: string; envVars: Record<string, string>; layers: string[] }> = []
+  // envVarValues is held only in memory for edge detection (S3/RDS references)
+  // and is never written to node metadata or graph.json. See §5 + §S3/RDS edge pass.
+  const lambdaFunctions: Array<{ nodeId: string; envVarValues: string[]; layers: string[] }> = []
   const s3BucketNames: string[] = []
   const s3NodeIds: Record<string, string> = {}
   const ec2NodeIds: string[] = []
@@ -334,9 +336,10 @@ export async function scanAWS(region: string): Promise<InfraGraph> {
         const envVars = fn.Environment?.Variables ?? {}
         const layers = (fn.Layers ?? []).map((l: any) => l.Arn ?? '')
 
-        // Store env var NAMES only (values may contain secrets like DATABASE_URL, API_KEY)
-        const envVarNames = Object.keys(envVars)
-        lambdaFunctions.push({ nodeId, envVarNames, envVars, layers })
+        // Values are held in memory ONLY to detect cross-resource references
+        // (e.g. an env var containing an S3 bucket name or RDS endpoint). They
+        // are never placed in node.metadata and never written to graph.json.
+        lambdaFunctions.push({ nodeId, envVarValues: Object.values(envVars), layers })
 
         nodes.push({
           id: nodeId,
@@ -548,7 +551,7 @@ export async function scanAWS(region: string): Promise<InfraGraph> {
   // -----------------------------------------------------------------------
   for (const fn of lambdaFunctions) {
     // Check if Lambda env vars reference any S3 bucket
-    const envValues = Object.values(fn.envVars).join(' ')
+    const envValues = fn.envVarValues.join(' ')
     for (const bucketName of s3BucketNames) {
       if (envValues.includes(bucketName)) {
         const targetNodeId = s3NodeIds[bucketName]
