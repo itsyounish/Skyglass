@@ -102,7 +102,7 @@
     "@azure/arm-containerservice": "^21.0.0",
     "@azure/arm-cosmosdb": "^16.0.0",
     "@azure/arm-eventhub": "^5.0.0",
-    "@azure/arm-keyvault": "^3.0.0",
+    "@azure/arm-keyvault": "^5.0.0",
     "@azure/arm-network": "^33.0.0",
     "@azure/arm-postgresql-flexible": "^8.0.0",
     "@azure/arm-redis": "^8.0.0",
