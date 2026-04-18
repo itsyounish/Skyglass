@@ -24,14 +24,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      # npm ci with a macOS-generated lockfile may skip Linux-specific
+      # npm ci with a macOS-generated lockfile skips Linux-specific
       # optional deps like @rollup/rollup-linux-x64-gnu (npm/cli#4828).
-      # A targeted rebuild resolves the native binding for the CI platform.
-      - name: Rebuild native modules
-        run: npm rebuild
+      # npm install resolves the correct platform bindings.
+      - name: Install dependencies
+        run: npm install
 
       - name: Build
         run: npm run build
