@@ -1,6 +1,6 @@
 {
   "name": "skyglass-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A looking glass for your cloud. Interactive 2D visualization of AWS, Azure, and GCP infrastructure.",
   "type": "module",
   "license": "MIT",
@@ -28,12 +28,15 @@
     "url": "git+https://github.com/itsyounish/Skyglass.git"
   },
   "bin": {
-    "skyglass-cli": "./bin/cli.js"
+    "skyglass-cli": "bin/cli.js"
   },
   "files": [
     "bin/",
     "dist/",
     "src/",
+    "!src/**/__tests__/",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
     "public/",
     "index.html",
     "vite.config.ts",

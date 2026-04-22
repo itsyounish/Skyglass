@@ -11,8 +11,12 @@ interface Props {
   selectedNodeId: string | null
   hoveredNodeId: string | null
   blastMode: boolean
+  blastSourceId: string | null
   blastAffectedNodes: Set<string>
   blastAffectedEdges: Set<string>
+  blastNodeHops: Map<string, number>
+  blastEdgeHops: Map<string, number>
+  blastBfsEdges: Set<string>
   searchMatchIds: Set<string> | null
   onSelect: (id: string | null) => void
   onHover: (id: string | null) => void
@@ -23,7 +27,8 @@ interface Props {
 export function Canvas2DView({
   graph, layoutNodes, settled,
   selectedNodeId, hoveredNodeId,
-  blastMode, blastAffectedNodes, blastAffectedEdges,
+  blastMode, blastSourceId, blastAffectedNodes, blastAffectedEdges,
+  blastNodeHops, blastEdgeHops, blastBfsEdges,
   searchMatchIds,
   onSelect, onHover, canvasRef: externalCanvasRef,
   theme,
@@ -118,12 +123,16 @@ export function Canvas2DView({
     r.selectedNodeId = selectedNodeId
     r.hoveredNodeId = hoveredNodeId
     r.blastMode = blastMode
+    r.setBlastSource(blastSourceId)
     r.blastAffectedNodes = blastAffectedNodes
     r.blastAffectedEdges = blastAffectedEdges
+    r.blastNodeHops = blastNodeHops
+    r.blastEdgeHops = blastEdgeHops
+    r.blastBfsEdges = blastBfsEdges
     r.searchMatchIds = searchMatchIds
     r.updateConnectedIds()
     r.markDirty()
-  }, [selectedNodeId, hoveredNodeId, blastMode, blastAffectedNodes, blastAffectedEdges, searchMatchIds])
+  }, [selectedNodeId, hoveredNodeId, blastMode, blastSourceId, blastAffectedNodes, blastAffectedEdges, blastNodeHops, blastEdgeHops, blastBfsEdges, searchMatchIds])
 
   // Sync theme
   useEffect(() => {

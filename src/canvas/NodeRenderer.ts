@@ -1,8 +1,23 @@
 import type { LayoutNode2D } from './types2d'
 import type { Theme } from '../theme'
 import { darkTheme } from '../theme'
-import { PROVIDER_COLORS } from '../constants'
+import { PROVIDER_COLORS, BLAST_HOP_COLORS, BLAST_HOP_DELAY_MS } from '../constants'
 import { drawServiceLogo } from './ServiceLogos'
+
+const HOP_DELAY_SEC = BLAST_HOP_DELAY_MS / 1000
+
+function blastColorForHop(hop: number): string {
+  const i = Math.max(0, Math.min(BLAST_HOP_COLORS.length - 1, hop))
+  return BLAST_HOP_COLORS[i]
+}
+
+/** Tier → (label, color). Drives the small impact tag above each blasted node. */
+function blastImpactInfo(hop: number, isSource: boolean): { label: string; color: string } {
+  if (isSource) return { label: 'OFFLINE', color: '#ff2e2e' }
+  if (hop <= 1) return { label: 'DOWN', color: '#ff4040' }
+  if (hop <= 3) return { label: 'DEGRADED', color: '#f07a3a' }
+  return { label: 'AT RISK', color: '#f59e0b' }
+}
 
 // ---------------------------------------------------------------------------
 // Theme (mutable module-level ref, updated by Renderer2D)
@@ -51,12 +66,18 @@ export function drawNodeOrb(
   opacity: number,
   time: number,
   isBlastAffected: boolean = false,
+  blastHop: number = -1,
+  isBlastSource: boolean = false,
+  blastElapsed: number = 0,
 ) {
   const colors = PROVIDER_COLORS[node.provider]
 
   // Size: importance drives radius. Bigger = more important.
   const baseSize = 6 + node.importance * 1.8
-  const sizeMult = isSelected ? 1.6 : (isHovered ? 1.4 : (isBlastAffected ? 1.25 : (isConnected ? 1.2 : (isFaded ? 0.85 : 1))))
+  const blastSizeMult = isBlastSource ? 1.5 : (isBlastAffected ? 1.25 : 1)
+  const sizeMult = isSelected
+    ? 1.6
+    : (isHovered ? 1.4 : (isBlastAffected ? blastSizeMult : (isConnected ? 1.2 : (isFaded ? 0.85 : 1))))
   const r = baseSize * sizeMult
 
   // Color: full or dimmed toward background
@@ -129,23 +150,149 @@ export function drawNodeOrb(
     ctx.globalAlpha = opacity
   }
 
-  // ── Blast radius: red pulsing halo on affected nodes ──────────────
+  // ── Blast radius: bold multi-layer treatment ──────────────────────
   if (isBlastAffected && !isFaded) {
-    const pulse = (Math.sin(time * 3.5) + 1) * 0.5
-    // Inner red ring — always on, bold
-    ctx.strokeStyle = '#ef4444'
-    ctx.lineWidth = 2
-    ctx.globalAlpha = opacity * 0.9
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2)
-    ctx.stroke()
-    // Outer pulsing halo
-    ctx.strokeStyle = '#ef4444'
-    ctx.lineWidth = 1.5
-    ctx.globalAlpha = opacity * (0.15 + pulse * 0.35)
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, r + 7 + pulse * 4, 0, Math.PI * 2)
-    ctx.stroke()
+    const hopColor = blastColorForHop(blastHop >= 0 ? blastHop : 2)
+    const pulse = (Math.sin(time * 3.5 - blastHop * 0.6) + 1) * 0.5
+    const hop = Math.max(0, blastHop)
+    const hopLandedAt = hop * HOP_DELAY_SEC
+    const impactAge = Math.max(0, blastElapsed - hopLandedAt)
+    const hasLanded = blastElapsed >= hopLandedAt
+
+    // One-shot impact shockwave — a bright ring bursts out when the hop first lands.
+    // Lives 0.9s after landing, then stays silent until the next blast source.
+    if (hasLanded && impactAge < 0.9) {
+      const t = impactAge / 0.9
+      const burstR = r + t * (40 + node.importance * 3)
+      const burstAlpha = (1 - t) * (isBlastSource ? 1 : 0.85)
+      ctx.strokeStyle = isBlastSource ? '#fff5f0' : hopColor
+      ctx.lineWidth = 3 * (1 - t * 0.5)
+      ctx.globalAlpha = opacity * burstAlpha
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, burstR, 0, Math.PI * 2)
+      ctx.stroke()
+      // Filled disc flash in the first 200ms
+      if (impactAge < 0.2) {
+        const flashAlpha = (1 - impactAge / 0.2) * 0.35
+        ctx.fillStyle = hopColor
+        ctx.globalAlpha = opacity * flashAlpha
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, r + 4, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalAlpha = opacity
+    }
+
+    if (isBlastSource) {
+      // ── Epicenter: bright white-hot core ring ──────────────────────
+      ctx.strokeStyle = '#fff5f0'
+      ctx.lineWidth = 3
+      ctx.globalAlpha = opacity
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r + 2, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // Thick red ring around the core
+      ctx.strokeStyle = '#ff2e2e'
+      ctx.lineWidth = 2.5
+      ctx.globalAlpha = opacity * 0.95
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r + 6, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // 3 concentric shockwaves expanding outward (staggered phases)
+      for (let i = 0; i < 3; i++) {
+        const phase = (((time * 0.7) + i / 3) % 1)
+        const ringR = r + 10 + phase * (90 + node.importance * 4)
+        const ringAlpha = (1 - phase) * 0.7
+        ctx.strokeStyle = '#ff3e3e'
+        ctx.lineWidth = 2 * (1 - phase * 0.7)
+        ctx.globalAlpha = opacity * ringAlpha
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, ringR, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+    } else {
+      // ── Affected (non-source): hop-colored double ring with pulse ──
+      ctx.strokeStyle = hopColor
+      ctx.lineWidth = 2.5
+      ctx.globalAlpha = opacity * 0.95
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // Outer pulsing halo — wider and more visible than before
+      ctx.strokeStyle = hopColor
+      ctx.lineWidth = 2
+      ctx.globalAlpha = opacity * (0.25 + pulse * 0.5)
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r + 9 + pulse * 6, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+
+    // ── Hop badge: small pill at top-right with the hop number ──────
+    if (blastHop >= 0) {
+      const badgeX = node.x + r * 0.72
+      const badgeY = node.y - r * 0.72
+      const badgeR = 7
+      const label = isBlastSource ? '!' : `+${blastHop}`
+
+      ctx.globalAlpha = opacity
+      ctx.fillStyle = isBlastSource ? '#fff5f0' : hopColor
+      ctx.beginPath()
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.strokeStyle = isBlastSource ? '#ff2e2e' : '#0a0a14'
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2)
+      ctx.stroke()
+
+      ctx.fillStyle = isBlastSource ? '#b91c1c' : '#0a0a14'
+      ctx.font = 'bold 9px "IBM Plex Mono", monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(label, badgeX, badgeY + 0.5)
+    }
+
+    // ── Impact tag above the node: OFFLINE / DOWN / DEGRADED / AT RISK ──
+    // Fades in after the hop lands, so it appears in sync with the cascade.
+    if (hasLanded) {
+      const impact = blastImpactInfo(hop, isBlastSource)
+      const tagOpacity = Math.min(impactAge / 0.25, 1)
+      const tagY = node.y - r - 16
+      ctx.save()
+      ctx.font = 'bold 9px "IBM Plex Mono", monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const tw = ctx.measureText(impact.label).width
+      const padX = 6
+      const boxW = tw + padX * 2
+      const boxH = 14
+      // Gentle vertical bob for the first 600ms so the tag feels like it slams in
+      const bob = impactAge < 0.6 ? (1 - impactAge / 0.6) * 4 : 0
+      const boxX = node.x - boxW / 2
+      const boxY = tagY - boxH / 2 + bob
+
+      ctx.globalAlpha = opacity * tagOpacity * 0.95
+      ctx.fillStyle = impact.color
+      ctx.beginPath()
+      ctx.roundRect(boxX, boxY, boxW, boxH, 3)
+      ctx.fill()
+
+      // Subtle outer ring to separate from busy backgrounds
+      ctx.strokeStyle = '#0a0a14'
+      ctx.lineWidth = 1
+      ctx.globalAlpha = opacity * tagOpacity * 0.4
+      ctx.stroke()
+
+      ctx.globalAlpha = opacity * tagOpacity
+      ctx.fillStyle = '#0a0a14'
+      ctx.fillText(impact.label, node.x, boxY + boxH / 2 + 0.5)
+      ctx.restore()
+    }
+
     ctx.globalAlpha = opacity
   }
 
@@ -300,8 +447,11 @@ export function drawNodeCardDetail(
   opacity: number,
   time: number,
   isBlastAffected: boolean = false,
+  blastHop: number = -1,
+  isBlastSource: boolean = false,
+  blastElapsed: number = 0,
 ) {
-  drawNodeOrb(ctx, node, isSelected, isHovered, isFaded, true, opacity, time, isBlastAffected)
+  drawNodeOrb(ctx, node, isSelected, isHovered, isFaded, true, opacity, time, isBlastAffected, blastHop, isBlastSource, blastElapsed)
   if (isFaded) return
 
   const orbR = 6 + node.importance * 1.8

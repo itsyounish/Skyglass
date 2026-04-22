@@ -106,6 +106,16 @@ export const PARENT_CHILD_STRENGTH = 0.35
 // Blast radius
 export const BLAST_HOP_DELAY_MS = 350
 export const BLAST_COLOR = '#ef4444'
+/** Hot → cool gradient: epicenter is white-hot, outer hops shift toward amber */
+export const BLAST_HOP_COLORS = [
+  '#fff5f0', // 0 — epicenter, white-hot
+  '#ff2e2e', // 1 — bright red
+  '#ef4444', // 2 — red
+  '#e85d3c', // 3 — red-orange
+  '#f07a3a', // 4 — orange
+  '#f59e0b', // 5 — amber
+  '#eab308', // 6 — yellow (outermost)
+] as const
 
 // Camera fly-to
 export const CAMERA_FLY_DURATION = 1.2

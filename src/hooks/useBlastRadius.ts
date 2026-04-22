@@ -1,10 +1,31 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { InfraGraph } from '../types'
 import { BLAST_HOP_DELAY_MS } from '../constants'
 
-export function useBlastRadius(graph: InfraGraph, enabled: boolean, sourceNodeId: string | null) {
-  const [affectedNodes, setAffectedNodes] = useState<Set<string>>(new Set())
-  const [affectedEdges, setAffectedEdges] = useState<Set<string>>(new Set())
+export interface BlastState {
+  affectedNodes: Set<string>
+  /** Every edge between two affected nodes — rendered red (BFS tree + lateral). */
+  affectedEdges: Set<string>
+  nodeHops: Map<string, number>
+  /** Hop number per affected edge (max of endpoint hops) — drives the color gradient. */
+  edgeHops: Map<string, number>
+  /** Subset of affectedEdges: only the edges the BFS actually crossed to discover a new node.
+   *  Cascade-packet animation is emitted only on these, to avoid visual noise. */
+  bfsEdges: Set<string>
+  maxHop: number
+}
+
+const EMPTY_STATE: BlastState = {
+  affectedNodes: new Set(),
+  affectedEdges: new Set(),
+  nodeHops: new Map(),
+  edgeHops: new Map(),
+  bfsEdges: new Set(),
+  maxHop: 0,
+}
+
+export function useBlastRadius(graph: InfraGraph, enabled: boolean, sourceNodeId: string | null): BlastState {
+  const [state, setState] = useState<BlastState>(EMPTY_STATE)
 
   // Build directed adjacency (source → targets)
   const adjacency = useMemo(() => {
@@ -23,30 +44,54 @@ export function useBlastRadius(graph: InfraGraph, enabled: boolean, sourceNodeId
 
   useEffect(() => {
     if (!enabled || !sourceNodeId) {
-      setAffectedNodes(new Set())
-      setAffectedEdges(new Set())
+      setState(EMPTY_STATE)
       return
     }
 
-    // BFS cascade with timed propagation
-    const visited = new Set<string>([sourceNodeId])
-    const visitedEdges = new Set<string>()
+    const nodeHops = new Map<string, number>([[sourceNodeId, 0]])
+    const bfsEdges = new Set<string>()
     let frontier = [sourceNodeId]
     let hop = 0
     const timers: ReturnType<typeof setTimeout>[] = []
 
+    /** Recompute lateral edges: every edge whose both endpoints are affected. */
+    function buildFullEdgeSet(): { affectedEdges: Set<string>; edgeHops: Map<string, number> } {
+      const affected = new Set<string>()
+      const hops = new Map<string, number>()
+      for (const e of graph.edges) {
+        const hs = nodeHops.get(e.source)
+        const ht = nodeHops.get(e.target)
+        if (hs === undefined || ht === undefined) continue
+        affected.add(e.id)
+        hops.set(e.id, Math.max(hs, ht))
+      }
+      return { affectedEdges: affected, edgeHops: hops }
+    }
+
+    function emit() {
+      const { affectedEdges, edgeHops } = buildFullEdgeSet()
+      setState({
+        affectedNodes: new Set(nodeHops.keys()),
+        affectedEdges,
+        nodeHops: new Map(nodeHops),
+        edgeHops,
+        bfsEdges: new Set(bfsEdges),
+        maxHop: hop,
+      })
+    }
+
     // Immediately show source
-    setAffectedNodes(new Set([sourceNodeId]))
-    setAffectedEdges(new Set())
+    emit()
 
     function propagateHop() {
       const nextFrontier: string[] = []
+      const nextHop = hop + 1
       for (const nodeId of frontier) {
         const neighbors = adjacency.get(nodeId) || []
         for (const { nodeId: neighbor, edgeId } of neighbors) {
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor)
-            visitedEdges.add(edgeId)
+          if (!nodeHops.has(neighbor)) {
+            nodeHops.set(neighbor, nextHop)
+            bfsEdges.add(edgeId)
             nextFrontier.push(neighbor)
           }
         }
@@ -54,9 +99,8 @@ export function useBlastRadius(graph: InfraGraph, enabled: boolean, sourceNodeId
       frontier = nextFrontier
 
       if (nextFrontier.length > 0) {
-        setAffectedNodes(new Set(visited))
-        setAffectedEdges(new Set(visitedEdges))
-        hop++
+        hop = nextHop
+        emit()
         if (hop < 6) { // Max 6 hops
           timers.push(setTimeout(propagateHop, BLAST_HOP_DELAY_MS))
         }
@@ -66,7 +110,7 @@ export function useBlastRadius(graph: InfraGraph, enabled: boolean, sourceNodeId
     timers.push(setTimeout(propagateHop, BLAST_HOP_DELAY_MS))
 
     return () => { timers.forEach(clearTimeout) }
-  }, [enabled, sourceNodeId, adjacency])
+  }, [enabled, sourceNodeId, adjacency, graph.edges])
 
-  return { affectedNodes, affectedEdges }
+  return state
 }

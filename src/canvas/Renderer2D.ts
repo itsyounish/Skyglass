@@ -55,7 +55,12 @@ export class Renderer2D {
   connectedIds: Set<string> | null = null
   blastAffectedNodes = new Set<string>()
   blastAffectedEdges = new Set<string>()
+  blastNodeHops = new Map<string, number>()
+  blastEdgeHops = new Map<string, number>()
+  blastBfsEdges = new Set<string>()
   blastMode = false
+  blastSourceId: string | null = null
+  private blastStartTime = 0
   searchMatchIds: Set<string> | null = null
 
   // Callbacks
@@ -112,6 +117,14 @@ export class Renderer2D {
   /** External code can mark the renderer dirty after changing interaction state. */
   markDirty(): void {
     this._dirty = true
+  }
+
+  /** Update the blast source; resets the shockwave animation clock when it changes. */
+  setBlastSource(id: string | null) {
+    if (this.blastSourceId !== id) {
+      this.blastSourceId = id
+      this.blastStartTime = performance.now() / 1000
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -198,7 +211,7 @@ export class Renderer2D {
 
   hitTest(screenX: number, screenY: number): string | null {
     const [wx, wy] = this.camera.screenToWorld(screenX, screenY, this.width, this.height)
-    return hitTestNodes(wx, wy, this.nodes)
+    return hitTestNodes(wx, wy, this.nodes, this.camera.zoom)
   }
 
   // ---------------------------------------------------------------------------
@@ -391,6 +404,42 @@ export class Renderer2D {
       ctx.drawImage(this._vignetteCanvas, 0, 0)
       ctx.restore()
     }
+
+    // Red danger vignette overlay when a blast is active
+    if (this.blastMode && this.blastSourceId && this.blastAffectedNodes.size > 0) {
+      this.drawBlastVignette(ctx, time)
+    }
+  }
+
+  /** Screen-space red edge vignette that pulses while a blast is active. */
+  private drawBlastVignette(ctx: CanvasRenderingContext2D, time: number) {
+    const pulse = (Math.sin(time * 2.2) + 1) * 0.5
+    const intensity = 0.18 + pulse * 0.12
+    const sinceStart = time - (this.blastStartTime - this.startTime)
+    const rampIn = Math.min(sinceStart / 0.35, 1) // ease in over 350ms
+
+    ctx.save()
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.scale(this.dpr, this.dpr)
+
+    const cx = this.width / 2
+    const cy = this.height / 2
+    const inner = Math.min(this.width, this.height) * 0.35
+    const outer = Math.max(this.width, this.height) * 0.9
+    const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer)
+    grad.addColorStop(0, 'rgba(239, 68, 68, 0)')
+    grad.addColorStop(0.6, `rgba(239, 68, 68, ${intensity * 0.4 * rampIn})`)
+    grad.addColorStop(1, `rgba(220, 38, 38, ${intensity * rampIn})`)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, this.width, this.height)
+
+    // Top banner bar: thin, bright — like a red-alert strip
+    ctx.globalAlpha = (0.45 + pulse * 0.25) * rampIn
+    ctx.fillStyle = '#ef4444'
+    ctx.fillRect(0, 0, this.width, 2)
+    ctx.fillRect(0, this.height - 2, this.width, 2)
+
+    ctx.restore()
   }
 
   // ---------------------------------------------------------------------------
@@ -406,6 +455,8 @@ export class Renderer2D {
         drawNodeDot(ctx, node, fade * 0.5)
       }
     }
+    this.drawBlastBloom(ctx, time)
+    this.drawBlastMacroMarkers(ctx, time)
   }
 
   private drawClusterView(ctx: CanvasRenderingContext2D, time: number, fade: number) {
@@ -420,10 +471,48 @@ export class Renderer2D {
         drawNodeDot(ctx, node, fade * 0.4)
       }
     }
+    this.drawBlastBloom(ctx, time)
+    this.drawBlastMacroMarkers(ctx, time)
+  }
+
+  /**
+   * Minimal blast markers for zoomed-out views — a bright dot per affected node
+   * plus a pulsing ring on the source, so the cascade stays readable from afar.
+   */
+  private drawBlastMacroMarkers(ctx: CanvasRenderingContext2D, time: number) {
+    if (!this.blastMode || this.blastAffectedNodes.size === 0) return
+    ctx.save()
+    for (const node of this.nodes) {
+      if (!this.blastAffectedNodes.has(node.id)) continue
+      if (!this.isNodeVisible(node)) continue
+      const hop = this.blastNodeHops.get(node.id) ?? 0
+      const isSource = node.id === this.blastSourceId
+      const color = isSource ? '#ff2e2e' : (hop <= 1 ? '#ef4444' : (hop <= 3 ? '#ef5a3a' : '#f59e0b'))
+      const r = isSource ? 6 : 4
+      ctx.fillStyle = color
+      ctx.globalAlpha = 0.95
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r, 0, Math.PI * 2)
+      ctx.fill()
+      if (isSource) {
+        for (let i = 0; i < 3; i++) {
+          const phase = (((time * 0.7) + i / 3) % 1)
+          const ringR = r + phase * 80
+          ctx.strokeStyle = '#ff3e3e'
+          ctx.lineWidth = 2 * (1 - phase * 0.7)
+          ctx.globalAlpha = (1 - phase) * 0.6
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, ringR, 0, Math.PI * 2)
+          ctx.stroke()
+        }
+      }
+    }
+    ctx.restore()
   }
 
   private drawNodeView(ctx: CanvasRenderingContext2D, time: number, _fade: number) {
     const entranceEase = easeOutQuart(this.entranceProgress)
+    const blastElapsed = this.blastMode ? Math.max(0, time - (this.blastStartTime - this.startTime)) : 0
 
     // ── Provider hulls (subtle cluster boundaries) ──────────────────
     for (const hull of this.providerHulls) {
@@ -475,8 +564,15 @@ export class Renderer2D {
       const isHighlighted = !isFaded && this.connectedIds !== null
         && this.connectedIds.has(edge.source) && this.connectedIds.has(edge.target)
 
-      drawEdge(ctx, edge, source, target, isFaded, isBlastPath, isHighlighted, time)
+      const edgeHop = isBlastPath ? (this.blastEdgeHops.get(edge.id) ?? -1) : -1
+      const direction = isBlastPath ? this.blastEdgeDirection(edge) : true
+
+      const emitPacket = isBlastPath && this.blastBfsEdges.has(edge.id)
+      drawEdge(ctx, edge, source, target, isFaded, isBlastPath, isHighlighted, time, edgeHop, direction, blastElapsed, emitPacket)
     }
+
+    // ── Red blast bloom pass (additive on dark) ─────────────────────
+    this.drawBlastBloom(ctx, time)
 
     // ── Nodes (staggered entrance with overshoot bounce) ────────────
     for (let i = 0; i < this.nodes.length; i++) {
@@ -493,6 +589,8 @@ export class Renderer2D {
       const isFaded = isBlastFaded || normalFaded || searchFaded
       const isConnected = this.connectedIds !== null && this.connectedIds.has(node.id)
       const isBlastAffected = this.blastMode && this.blastAffectedNodes.has(node.id)
+      const blastHop = isBlastAffected ? (this.blastNodeHops.get(node.id) ?? -1) : -1
+      const isBlastSource = isBlastAffected && node.id === this.blastSourceId
 
       // Entrance: scale from 0 with elastic overshoot
       if (nodeEntrance < 1) {
@@ -501,10 +599,10 @@ export class Renderer2D {
         ctx.translate(node.x, node.y)
         ctx.scale(scale, scale)
         ctx.translate(-node.x, -node.y)
-        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected)
+        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected, blastHop, isBlastSource, blastElapsed)
         ctx.restore()
       } else {
-        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected)
+        drawNodeOrb(ctx, node, this.selectedNodeId === node.id, this.hoveredNodeId === node.id, isFaded, isConnected, nodeOpacity, time, isBlastAffected, blastHop, isBlastSource, blastElapsed)
       }
     }
 
@@ -540,6 +638,8 @@ export class Renderer2D {
   }
 
   private drawDetailView(ctx: CanvasRenderingContext2D, time: number, _fade: number) {
+    const blastElapsed = this.blastMode ? Math.max(0, time - (this.blastStartTime - this.startTime)) : 0
+
     for (const hull of this.vpcHulls) {
       drawVpcHull(ctx, hull, 1)
     }
@@ -558,9 +658,15 @@ export class Renderer2D {
       const isHighlighted = !isFaded && this.connectedIds !== null
         && this.connectedIds.has(edge.source) && this.connectedIds.has(edge.target)
 
-      drawEdge(ctx, edge, source, target, isFaded, isBlastPath, isHighlighted, time)
+      const edgeHop = isBlastPath ? (this.blastEdgeHops.get(edge.id) ?? -1) : -1
+      const direction = isBlastPath ? this.blastEdgeDirection(edge) : true
+
+      const emitPacket = isBlastPath && this.blastBfsEdges.has(edge.id)
+      drawEdge(ctx, edge, source, target, isFaded, isBlastPath, isHighlighted, time, edgeHop, direction, blastElapsed, emitPacket)
       drawEdgeLabel(ctx, edge, source, target, isFaded)
     }
+
+    this.drawBlastBloom(ctx, time)
 
     for (const node of this.nodes) {
       if (!this.isNodeVisible(node)) continue
@@ -570,6 +676,8 @@ export class Renderer2D {
       const searchFaded = this.searchMatchIds !== null && !this.searchMatchIds.has(node.id)
       const isFaded = isBlastFaded || normalFaded || searchFaded
       const isBlastAffected = this.blastMode && this.blastAffectedNodes.has(node.id)
+      const blastHop = isBlastAffected ? (this.blastNodeHops.get(node.id) ?? -1) : -1
+      const isBlastSource = isBlastAffected && node.id === this.blastSourceId
 
       drawNodeCardDetail(
         ctx, node,
@@ -577,8 +685,60 @@ export class Renderer2D {
         this.hoveredNodeId === node.id,
         isFaded, 1, time,
         isBlastAffected,
+        blastHop,
+        isBlastSource,
+        blastElapsed,
       )
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Blast helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Whether the blast along this edge flows in its natural direction (source → target).
+   * For dependency edges we reverse by design, and for any edge where the endpoint
+   * hops are inverted (target closer to the epicenter than source) we also reverse.
+   */
+  private blastEdgeDirection(edge: InfraEdge): boolean {
+    const hs = this.blastNodeHops.get(edge.source)
+    const ht = this.blastNodeHops.get(edge.target)
+    if (hs === undefined || ht === undefined) return true
+    if (hs === ht) return edge.type !== 'dependency'
+    return hs < ht
+  }
+
+  /** Additive red bloom on every affected node — a giant "danger glow" field. */
+  private drawBlastBloom(ctx: CanvasRenderingContext2D, _time: number) {
+    if (!this.blastMode || this.blastAffectedNodes.size === 0) return
+
+    const useAdditive = this._theme.useGlowComposite
+    ctx.save()
+    if (useAdditive) ctx.globalCompositeOperation = 'lighter'
+
+    for (const node of this.nodes) {
+      if (!this.blastAffectedNodes.has(node.id)) continue
+      if (!this.isNodeVisible(node)) continue
+      const hop = this.blastNodeHops.get(node.id) ?? 0
+      const isSource = node.id === this.blastSourceId
+      const r = 6 + node.importance * 1.8
+      const glowR = r * (isSource ? 9 : 6)
+      // Epicenter uses hot red; outer hops fade toward amber
+      const color = isSource ? '#ff3030' : (hop <= 1 ? '#ef4444' : (hop <= 3 ? '#ef5a3a' : '#f59e0b'))
+      const intensity = isSource ? 0.22 : (useAdditive ? 0.08 : 0.16)
+      const hex = Math.round(intensity * 255).toString(16).padStart(2, '0')
+      const grad = ctx.createRadialGradient(node.x, node.y, r * 0.3, node.x, node.y, glowR)
+      grad.addColorStop(0, color + hex)
+      grad.addColorStop(1, color + '00')
+      ctx.fillStyle = grad
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.restore()
   }
 }
 

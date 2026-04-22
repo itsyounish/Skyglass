@@ -41,6 +41,7 @@ export function StatusBar({ graph }: Props) {
       color: theme.textTertiary,
       zIndex: 50,
       backdropFilter: 'blur(8px)',
+      pointerEvents: 'none',
     }}>
       <span style={{ color: theme.textSecondary }}>
         {graph.nodes.length} resources

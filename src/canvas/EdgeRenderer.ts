@@ -2,8 +2,10 @@ import type { InfraEdge } from '../types'
 import type { LayoutNode2D } from './types2d'
 import type { Theme } from '../theme'
 import { darkTheme } from '../theme'
-import { EDGE_TYPE_COLORS } from '../constants'
+import { EDGE_TYPE_COLORS, BLAST_HOP_DELAY_MS } from '../constants'
 import { EDGE_PARTICLE_SPEED } from '../constants-2d'
+
+const HOP_DELAY_SEC = BLAST_HOP_DELAY_MS / 1000
 
 // ---------------------------------------------------------------------------
 // Theme (mutable module-level ref, updated by Renderer2D)
@@ -58,6 +60,8 @@ for (const [, color] of Object.entries(EDGE_TYPE_COLORS)) {
 }
 getParticleSprite('#ef4444', 3.5) // blast color
 getParticleSprite('#2a2a3a', 1.5) // default edge color
+getParticleSprite('#fff5f0', 4)   // cascade-packet core (white-hot)
+getParticleSprite('#ff3e3e', 7)   // cascade-packet halo
 
 // ---------------------------------------------------------------------------
 // Edge drawing
@@ -72,12 +76,18 @@ export function drawEdge(
   isBlastPath: boolean,
   isHighlighted: boolean,
   time: number,
+  blastHop: number = -1,
+  blastDirectionForward: boolean = true,
+  blastElapsed: number = 0,
+  emitCascadePacket: boolean = false,
 ) {
   const isCrossCloud = edge.type === 'cross-cloud'
 
   const typeColor = EDGE_TYPE_COLORS[edge.type] || _theme.edgeDefaultColor
   const defaultColor = _theme.edgeDefaultColor
-  const color = isBlastPath ? '#ef4444' : (isHighlighted ? typeColor : defaultColor)
+  // Brighter red at low hops, shifts toward orange/amber at the edge of the blast
+  const blastColor = isBlastPath ? (blastHop <= 1 ? '#ff2e2e' : (blastHop <= 3 ? '#ef4444' : '#f59e0b')) : '#ef4444'
+  const color = isBlastPath ? blastColor : (isHighlighted ? typeColor : defaultColor)
 
   // Orb edge offsets
   const r1 = 6 + source.importance * 1.8 + 2
@@ -111,8 +121,8 @@ export function drawEdge(
     lineAlpha = 0.08
     lineWidth = 0.3
   } else if (isBlastPath) {
-    lineAlpha = 0.95
-    lineWidth = 2.5
+    lineAlpha = 1
+    lineWidth = 3.5
   } else if (isHighlighted) {
     lineAlpha = 0.7
     lineWidth = isCrossCloud ? 1.5 : 1
@@ -139,7 +149,7 @@ export function drawEdge(
     ctx.setLineDash([])
   }
 
-  // Glow on highlighted/blast edges
+  // Glow on highlighted edges
   if (isHighlighted && !isFaded) {
     ctx.globalAlpha = lineAlpha * 0.3
     ctx.lineWidth = 3
@@ -149,14 +159,85 @@ export function drawEdge(
     ctx.stroke()
   }
 
+  // Outer glow on blast edges (additive on dark, extra stroke on light)
+  if (isBlastPath && !isFaded) {
+    if (_theme.useGlowComposite) ctx.globalCompositeOperation = 'lighter'
+    ctx.globalAlpha = 0.35
+    ctx.strokeStyle = color
+    ctx.lineWidth = 8
+    ctx.beginPath()
+    ctx.moveTo(sx, sy)
+    ctx.quadraticCurveTo(cpx, cpy, ex, ey)
+    ctx.stroke()
+    ctx.globalAlpha = 0.2
+    ctx.lineWidth = 14
+    ctx.beginPath()
+    ctx.moveTo(sx, sy)
+    ctx.quadraticCurveTo(cpx, cpy, ex, ey)
+    ctx.stroke()
+    ctx.globalCompositeOperation = 'source-over'
+
+    // Directional chevron — points in the direction the blast travels
+    const arrowT = 0.58
+    const ax = quadBezier(arrowT, sx, cpx, ex)
+    const ay = quadBezier(arrowT, sy, cpy, ey)
+    // Tangent at t
+    const tx = 2 * (1 - arrowT) * (cpx - sx) + 2 * arrowT * (ex - cpx)
+    const ty = 2 * (1 - arrowT) * (cpy - sy) + 2 * arrowT * (ey - cpy)
+    const tLen = Math.sqrt(tx * tx + ty * ty) || 1
+    const dirX = (tx / tLen) * (blastDirectionForward ? 1 : -1)
+    const dirY = (ty / tLen) * (blastDirectionForward ? 1 : -1)
+    const size = 7
+    const nxp = -dirY
+    const nyp = dirX
+    ctx.globalAlpha = 0.95
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(ax + dirX * size, ay + dirY * size)
+    ctx.lineTo(ax - dirX * size * 0.4 + nxp * size * 0.7, ay - dirY * size * 0.4 + nyp * size * 0.7)
+    ctx.lineTo(ax - dirX * size * 0.4 - nxp * size * 0.7, ay - dirY * size * 0.4 - nyp * size * 0.7)
+    ctx.closePath()
+    ctx.fill()
+
+    // ── Cascade packet: bright pulse that travels this edge exactly once,
+    // when the blast crosses it. Emitted between hop-1 and hop, in the
+    // direction of propagation. Only on BFS-tree edges — lateral/redundant
+    // edges between already-affected nodes get the red styling but no packet.
+    if (emitCascadePacket && blastHop >= 1) {
+      const packetStart = (blastHop - 1) * HOP_DELAY_SEC
+      const packetDuration = HOP_DELAY_SEC
+      const packetAge = blastElapsed - packetStart
+      if (packetAge >= 0 && packetAge < packetDuration) {
+        const rawT = packetAge / packetDuration
+        const t = blastDirectionForward ? rawT : 1 - rawT
+        const pxp = quadBezier(t, sx, cpx, ex)
+        const pyp = quadBezier(t, sy, cpy, ey)
+        // Bright white-hot core
+        if (_theme.useGlowComposite) ctx.globalCompositeOperation = 'lighter'
+        ctx.globalAlpha = 0.95 * (1 - rawT * 0.3)
+        const coreSprite = getParticleSprite('#fff5f0', 4)
+        const coreD = Math.ceil(4 * 4)
+        ctx.drawImage(coreSprite, pxp - coreD / 2, pyp - coreD / 2, coreD, coreD)
+        // Red halo
+        ctx.globalAlpha = 0.85 * (1 - rawT * 0.3)
+        const haloSprite = getParticleSprite('#ff3e3e', 7)
+        const haloD = Math.ceil(7 * 4)
+        ctx.drawImage(haloSprite, pxp - haloD / 2, pyp - haloD / 2, haloD, haloD)
+        ctx.globalCompositeOperation = 'source-over'
+      }
+    }
+  }
+
   // Flow particles — using pre-rendered sprites instead of per-frame gradients
   if (!isFaded) {
-    const count = isBlastPath ? 5 : (isHighlighted ? 3 : 1)
-    const speedMult = edge.type === 'data' ? 1.5 : (edge.type === 'network' ? 1.2 : 0.8)
+    const count = isBlastPath ? 8 : (isHighlighted ? 3 : 1)
+    const speedMult = isBlastPath
+      ? 3
+      : (edge.type === 'data' ? 1.5 : (edge.type === 'network' ? 1.2 : 0.8))
     const speed = EDGE_PARTICLE_SPEED * speedMult
 
     const pSize = isBlastPath ? 3.5 : (isHighlighted ? 2.5 : 1.5)
-    const pAlpha = isBlastPath ? 0.6 : (isHighlighted ? 0.35 : 0.12)
+    const pAlpha = isBlastPath ? 0.85 : (isHighlighted ? 0.35 : 0.12)
     const pColor = isHighlighted || isBlastPath ? color : (EDGE_TYPE_COLORS[edge.type] || _theme.edgeDefaultColor)
     const sprite = getParticleSprite(pColor, pSize)
     const spriteD = Math.ceil(pSize * 4)

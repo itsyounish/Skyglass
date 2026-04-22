@@ -23,6 +23,7 @@ export function Legend({ graph }: LegendProps) {
       fontFamily: "'IBM Plex Mono', monospace",
       fontSize: '11px',
       zIndex: 50,
+      pointerEvents: 'none',
     }}>
       <div style={{
         background: theme.panelBg,

@@ -7,9 +7,11 @@ interface Props {
   onClose: () => void
   blastMode?: boolean
   blastCount?: number
+  blastMaxHop?: number
+  blastTotalCount?: number
 }
 
-export function DetailPanel({ node, onClose, blastMode, blastCount }: Props) {
+export function DetailPanel({ node, onClose, blastMode, blastCount, blastMaxHop, blastTotalCount }: Props) {
   const { theme } = useTheme()
 
   if (!node) return null
@@ -46,23 +48,66 @@ export function DetailPanel({ node, onClose, blastMode, blastCount }: Props) {
       animation: 'slideIn 0.25s ease-out',
       zIndex: 100,
     }}>
-      {/* Blast radius banner */}
-      {blastMode && blastCount && blastCount > 1 && (
-        <div style={{
-          padding: '10px 18px',
-          background: 'rgba(239, 68, 68, 0.12)',
-          borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
-          fontSize: '11px',
-          color: '#ef4444',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'blastPulse 2s ease-in-out infinite',
-        }}>
-          <span style={{ fontSize: '14px' }}>BLAST RADIUS</span>
-          <span style={{ marginLeft: 'auto', color: '#ef444480' }}>{blastCount} resources affected</span>
-        </div>
-      )}
+      {/* Blast radius banner — hop depth + impact percentage */}
+      {blastMode && blastCount && blastCount > 1 && (() => {
+        const total = Math.max(1, blastTotalCount ?? 0)
+        const pct = Math.round((blastCount / total) * 100)
+        const hops = blastMaxHop ?? 0
+        return (
+          <div style={{
+            padding: '12px 18px',
+            background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.22), rgba(239, 68, 68, 0.08))',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.35)',
+            fontSize: '11px',
+            color: '#ff5a5a',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            animation: 'blastPulse 1.6s ease-in-out infinite',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{
+                display: 'inline-block',
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: '#ff2e2e',
+                boxShadow: '0 0 10px #ff2e2e',
+                animation: 'pulse 1.2s ease-in-out infinite',
+              }} />
+              <span style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '2px' }}>BLAST RADIUS</span>
+              <span style={{ marginLeft: 'auto', color: '#fff', fontWeight: 500 }}>
+                {blastCount}<span style={{ color: '#ff999980' }}> / {total}</span>
+              </span>
+            </div>
+            {/* Impact bar */}
+            <div style={{
+              position: 'relative',
+              height: '4px',
+              background: 'rgba(239, 68, 68, 0.15)',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                width: `${pct}%`,
+                background: 'linear-gradient(90deg, #ff2e2e, #f59e0b)',
+                borderRadius: '2px',
+                boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
+              }} />
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              color: '#ff999980',
+              fontSize: '10px',
+              letterSpacing: '1px',
+            }}>
+              <span>{pct}% OF INFRA AFFECTED</span>
+              <span>{hops} {hops === 1 ? 'HOP' : 'HOPS'} DEEP</span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Header */}
       <div style={{

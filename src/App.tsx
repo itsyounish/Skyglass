@@ -71,7 +71,7 @@ function GraphView({ graph }: { graph: InfraGraph }) {
   const [costPanelVisible, setCostPanelVisible] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const { affectedNodes, affectedEdges } = useBlastRadius(
+  const { affectedNodes, affectedEdges, nodeHops, edgeHops, bfsEdges, maxHop } = useBlastRadius(
     graph,
     blastMode,
     selectedNodeId,
@@ -134,8 +134,12 @@ function GraphView({ graph }: { graph: InfraGraph }) {
           selectedNodeId={selectedNodeId}
           hoveredNodeId={hoveredNodeId}
           blastMode={blastMode}
+          blastSourceId={blastMode ? selectedNodeId : null}
           blastAffectedNodes={affectedNodes}
           blastAffectedEdges={affectedEdges}
+          blastNodeHops={nodeHops}
+          blastEdgeHops={edgeHops}
+          blastBfsEdges={bfsEdges}
           searchMatchIds={searchMatchIds}
           onSelect={setSelectedNodeId}
           onHover={setHoveredNodeId}
@@ -158,6 +162,8 @@ function GraphView({ graph }: { graph: InfraGraph }) {
         onClose={() => setSelectedNodeId(null)}
         blastMode={blastMode}
         blastCount={affectedNodes.size}
+        blastMaxHop={maxHop}
+        blastTotalCount={graph.nodes.length}
       />
       <SearchFilter
         graph={graph}

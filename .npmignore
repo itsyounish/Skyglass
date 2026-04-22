@@ -1,7 +1,9 @@
 # Test files
-src/**/__tests__/
-src/**/*.test.ts
-src/**/*.spec.ts
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
 vitest.config.ts
 
 # CI / tooling

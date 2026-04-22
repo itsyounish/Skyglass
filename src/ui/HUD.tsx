@@ -45,6 +45,7 @@ export function HUD({ blastMode, onToggleBlast, onScreenshot, onOpenSearch, onTo
     color: theme.textTertiary,
     textAlign: 'left',
     transition: 'all 0.2s ease',
+    pointerEvents: 'auto',
   }
 
   const crossCloudColor = theme.crossCloudEdge
@@ -56,6 +57,7 @@ export function HUD({ blastMode, onToggleBlast, onScreenshot, onOpenSearch, onTo
       left: '20px',
       fontFamily: "'IBM Plex Mono', monospace",
       zIndex: 50,
+      pointerEvents: 'none',
     }}>
       {/* Title */}
       <div style={{
