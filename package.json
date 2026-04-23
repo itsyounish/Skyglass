@@ -127,7 +127,7 @@
     "@google-cloud/spanner": "^7.0.0",
     "@google-cloud/sql": "^1.0.0",
     "@google-cloud/storage": "^7.0.0",
-    "@google-cloud/tasks": "^5.0.0"
+    "@google-cloud/tasks": "^6.2.1"
   },
   "engines": {
     "node": ">=20"
