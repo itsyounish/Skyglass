@@ -111,7 +111,7 @@
     "@azure/arm-redis": "^8.0.0",
     "@azure/arm-servicebus": "^7.0.0",
     "@azure/arm-sql": "^10.0.0",
-    "@azure/arm-storage": "^18.0.0",
+    "@azure/arm-storage": "^19.1.0",
     "@azure/identity": "^4.0.0",
     "@google-cloud/artifact-registry": "^3.0.0",
     "@google-cloud/bigquery": "^7.0.0",
