@@ -21,6 +21,9 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const root = resolve(__dirname, '..')
 
+const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8'))
+const VERSION = pkg.version
+
 // ---------------------------------------------------------------------------
 // Parse CLI args
 // ---------------------------------------------------------------------------
@@ -495,7 +498,7 @@ if (!flags.provider && !flags.demo && !flags.from) {
 // ---------------------------------------------------------------------------
 console.log('')
 console.log('  ╔══════════════════════════════════════╗')
-console.log('  ║        skyglass  ·  v0.1.0           ║')
+console.log(`  ║        skyglass  ·  v${VERSION.padEnd(15)}║`)
 console.log('  ║  A looking glass for your cloud      ║')
 console.log('  ╚══════════════════════════════════════╝')
 console.log('')
