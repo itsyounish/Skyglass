@@ -50,6 +50,9 @@ for (let i = 0; i < args.length; i++) {
     flags.redact = true
   } else if (args[i] === '--generate-policy') {
     flags.generatePolicy = args[++i]
+  } else if (args[i] === '--version' || args[i] === '-v') {
+    console.log(VERSION)
+    process.exit(0)
   } else if (args[i] === '--help' || args[i] === '-h') {
     console.log(`
   skyglass — A looking glass for your cloud
@@ -77,6 +80,7 @@ for (let i = 0; i < args.length; i++) {
     --demo, -d                                   Run with sample multi-cloud data
     --generate-policy <provider>                 Output minimal read-only IAM policy (aws|azure|gcp)
     --help, -h                                   Show this help
+    --version, -v                                Show version number
 
   Snapshot Management:
     npx skyglass-cli history                         List all saved snapshots

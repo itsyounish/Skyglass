@@ -1,6 +1,6 @@
 {
   "name": "skyglass-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A looking glass for your cloud. Interactive 2D visualization of AWS, Azure, and GCP infrastructure.",
   "type": "module",
   "license": "MIT",
