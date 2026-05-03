@@ -32,7 +32,7 @@ I picked Canvas 2D.
 
 This is not a fashionable decision. Canvas 2D is the unsexy cousin of WebGL. No shaders. No GPU-accelerated particle systems. Just a 2D context, a draw call, and a tight rendering loop. But for the use case — read-heavy, label-heavy, hover-sensitive, *correct above flashy* — it is exactly the right tool.
 
-The unexpected payoff: the entire front-end gzipped to 284 KB. There is no Three.js shader compilation on first load. There is no WebGL context loss to recover from. There is no "your browser doesn't support this" error path. Canvas 2D has been universally available since 2009 and the browser vendors have spent the last decade making it absurdly fast.
+The unexpected payoff: the entire front-end gzipped to 86 KB (284 KB minified). There is no Three.js shader compilation on first load. There is no WebGL context loss to recover from. There is no "your browser doesn't support this" error path. Canvas 2D has been universally available since 2009 and the browser vendors have spent the last decade making it absurdly fast.
 
 The tradeoff I accepted: I would lose access to the GPU's parallelism. A canvas redraw at 1000 nodes is a thousand sequential paint calls on the CPU. So the second decision became inevitable.
 

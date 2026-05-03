@@ -188,7 +188,7 @@ All scans are **read-only**. Only `Describe*`, `List*`, and `Get*` API calls are
 | **Icons** | Official AWS/Azure/GCP architecture icons via [tf2d2/icons](https://github.com/tf2d2/icons) |
 | **Framework** | React + TypeScript (strict) |
 | **Scanners** | AWS SDK v3, Azure SDK, Google Cloud SDK (optional deps) |
-| **Build** | Vite &mdash; 284 KB bundle (83 KB gzip) |
+| **Build** | Vite &mdash; 284 KB bundle (86 KB gzip) |
 
 ---
 

@@ -148,7 +148,7 @@ Canvas 2D, zero WebGL or Three.js.
 Barnes-Hut quadtree force layout in a Web Worker. O(n log n).
 Sprite caches everywhere — never paint a gradient inside a tight loop.
 
-284 KB gzipped. 60fps at 1000+ nodes on a MacBook Air.
+86 KB gzipped. 60fps at 1000+ nodes on a MacBook Air.
 ```
 
 **Tweet 6 — local-first**
@@ -178,7 +178,7 @@ zoom, search, click, and blast.
 
 ```
 Solo dev. 3 months. MIT.
-TypeScript strict. 284 KB.
+TypeScript strict. 86 KB gzipped.
 
 I built this because I needed it.
 The fact that it's open source is the side effect, not the strategy.
@@ -234,7 +234,7 @@ J'ai construit Skyglass pour que ça ne m'arrive plus.
 Choix techniques que je détaille volontiers si ça intéresse :
 • Canvas 2D, pas de WebGL — performant et lisible à 1000+ ressources
 • Barnes-Hut quadtree dans un Web Worker pour le force layout
-• 284 KB gzippé, build TypeScript strict
+• 86 KB gzippé (284 KB minifié), build TypeScript strict
 • Read-only sur les API cloud (Describe*, List*, Get* uniquement)
 
 C'est open source.
@@ -376,7 +376,7 @@ model — I'd rather know now than after 1.0.
 
 **Titre** :
 ```
-Solo dev, 3 months, MIT — Skyglass: a multi-cloud infrastructure visualizer in 284 KB
+Solo dev, 3 months, MIT — Skyglass: a multi-cloud infrastructure visualizer in 86 KB gzipped
 ```
 
 **Corps** :
@@ -388,7 +388,7 @@ GCP) as an interactive graph. The interesting bits from a build
 perspective:
 
 - TypeScript strict, no `any` outside one cloud-SDK shim
-- 284 KB gzipped front-end, zero WebGL
+- 86 KB gzipped front-end (284 KB minified), zero WebGL
 - Barnes-Hut quadtree force layout in a Web Worker, O(n log n)
 - Canvas 2D rendering with sprite caches and viewport culling
 - Read-only cloud SDKs as optionalDependencies (Vite tree-shakes the
@@ -542,7 +542,7 @@ in your browser, in less time than the Console takes to load a single
 service tab. Open source, MIT, local-first, no SaaS.
 
 You'll appreciate the blast-radius mode and that the entire frontend
-is 284 KB with zero WebGL. Cross-account / cross-region / cross-cloud
+is 86 KB gzipped (284 KB minified) with zero WebGL. Cross-account / cross-region / cross-cloud
 edges in the same view, which AWS itself still hasn't shipped.
 
 npx skyglass-cli --demo
@@ -561,7 +561,7 @@ Hi Adam (or Changelog editorial),
 
 Just launched Skyglass on HN: an open-source CLI that scans
 multi-cloud infrastructure and renders it as an interactive 2D graph,
-locally. MIT, TypeScript strict, 284 KB front-end, no WebGL. Solo
+locally. MIT, TypeScript strict, 86 KB gzipped front-end, no WebGL. Solo
 project, 3 months.
 
 Worth covering because the blast-radius cascade animation is the
@@ -719,8 +719,8 @@ I've been a Sourcegraph reader for a while and your taste in
 shipping.
 
 Monday I'm launching Skyglass: open-source CLI that draws your cloud
-infra as an interactive 2D graph. TypeScript strict, 284 KB, no
-WebGL, Barnes-Hut force layout in a Web Worker. MIT.
+infra as an interactive 2D graph. TypeScript strict, 86 KB gzipped,
+no WebGL, Barnes-Hut force layout in a Web Worker. MIT.
 
 10s demo:
 {link}
@@ -782,7 +782,7 @@ Vercel's bar for hero animations is the reason I rewrote the
 blast-radius cascade three times before I was happy.
 
 Launching Monday: Skyglass, an open-source CLI that renders your
-cloud as an interactive graph. Local-first, MIT, 284 KB, hero
+cloud as an interactive graph. Local-first, MIT, 86 KB gzipped, hero
 moments tuned to feel right at 60fps.
 
 Preview (10s, muted):
