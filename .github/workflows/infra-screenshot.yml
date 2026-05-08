@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload screenshot artifact
         id: upload-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: infra-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
           path: screenshot.png
